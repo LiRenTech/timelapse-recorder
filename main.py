@@ -5,6 +5,7 @@ from time import perf_counter
 
 from PIL import ImageGrab
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
+from PyQt5.QtCore import QTimer
 
 
 class ScreenshotApp(QWidget):
@@ -18,6 +19,9 @@ class ScreenshotApp(QWidget):
             os.mkdir(self.output_dir)
 
         self.current_dir = ""
+
+        self.timer = QTimer(self)  # 动态开启一个Qt定时器
+        self.grab_index = 0  # 截图计数器
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -46,6 +50,10 @@ class ScreenshotApp(QWidget):
         t2 = perf_counter()
         print(f"截图耗时：{t2 - t1:.2f}秒")
 
+        # 刷新提示
+        self.tips_text.setText(f"已保存第{self.grab_index+1}张截图")
+        self.grab_index += 1
+
     def images_to_video(self, dir_name, video_name="timelapse.mp4"):
         # 使用ffmpeg将图片合成视频
         command = [
@@ -64,35 +72,38 @@ class ScreenshotApp(QWidget):
         print(f"视频已保存为 {video_name}")
 
     def start_screenshots(self):
-        self.tips_text.setText("正在截图...")
-
+        self.grab_index = 0
         self.current_dir = f"screenshots-{int(perf_counter())}"
         dir_name = f"{self.output_dir}/{self.current_dir}"
         os.mkdir(dir_name)
 
-        loop = asyncio.get_event_loop()
-
-        async def take_screenshots():
-            for i in range(50):
-                await self.grab_screenshot(f"{dir_name}/{i + 1}.png")
-                await asyncio.sleep(1)
-
-        loop.run_until_complete(take_screenshots())
+        self.timer.timeout.connect(
+            lambda: asyncio.run(
+                self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
+            )
+        )
+        self.timer.start(1000)  # 每隔1秒截图一次
 
     def stop_screenshots(self):
+        self.grab_index = 0
+        self.timer.stop()
         self.tips_text.setText("正在生成视频……")
         # 改成红色
         self.tips_text.setStyleSheet("QLabel { color: red; }")
-        self.images_to_video(f"{self.output_dir}/{self.current_dir}", f"{self.current_dir}.mp4")
+        self.images_to_video(
+            f"{self.output_dir}/{self.current_dir}", f"{self.current_dir}.mp4"
+        )
         self.tips_text.setText("截图完成并生成视频！")
         # 改成绿色
         self.tips_text.setStyleSheet("QLabel { color: green; }")
-        
+
         # 删除临时文件夹
         # os.rmdir(f"{self.output_dir}/{self.current_dir}")  # 报错，目录不是空的
 
         # 递归删除
-        for root, dirs, files in os.walk(f"{self.output_dir}/{self.current_dir}", topdown=False):
+        for root, dirs, files in os.walk(
+            f"{self.output_dir}/{self.current_dir}", topdown=False
+        ):
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:
