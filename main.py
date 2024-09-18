@@ -49,7 +49,9 @@ class ScreenshotApp(QWidget):
 
         layout.addWidget(QLabel("最终视频倍速：", self))
         self.speed_combo = QComboBox(self)
-        self.speed_combo.addItems(["x10", "x20", "x50", "x100", "x200", "x500", "x1000"])
+        self.speed_combo.addItems(
+            ["x10", "x20", "x50", "x100", "x200", "x500", "x1000"]
+        )
         self.speed_combo.currentIndexChanged.connect(self.update_speed)
         # 设置默认倍速为20
         self.speed_combo.setCurrentIndex(1)
@@ -113,6 +115,10 @@ class ScreenshotApp(QWidget):
     def start_screenshots(self):
         self.is_recording = True
         self.grab_index = 0
+
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+
         self.current_dir = f"screenshots-{int(perf_counter())}"
         dir_name = f"{self.output_dir}/{self.current_dir}"
         os.mkdir(dir_name)
@@ -123,7 +129,9 @@ class ScreenshotApp(QWidget):
                 self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
             )
         )
-        self.timer.start(int(1000 / self.frame_rate * self.speed_rate))  # 使用自定义间隔
+        self.timer.start(
+            int(1000 / self.frame_rate * self.speed_rate)
+        )  # 使用自定义间隔
 
     def stop_screenshots(self):
         self.is_recording = False
@@ -132,9 +140,12 @@ class ScreenshotApp(QWidget):
         self.tips_text.setText("正在生成视频……")
         # 禁用按钮
         self.record_button.setEnabled(False)
+        self.record_button.setText("正在生成视频……")
 
         # 改成红色
         self.tips_text.setStyleSheet("QLabel { color: red; }")
+        self.update()
+
         self.images_to_video(
             f"{self.output_dir}/{self.current_dir}", f"{self.current_dir}.mp4"
         )
@@ -146,15 +157,13 @@ class ScreenshotApp(QWidget):
         # 更新按钮文本
         self.record_button.setText("开始录制")
 
-        # 删除临时文件夹
-        for root, dirs, files in os.walk(
-            f"{self.output_dir}/{self.current_dir}", topdown=False
-        ):
+        # 删除临时文件夹 output
+        for root, dirs, files in os.walk(f"{self.output_dir}", topdown=False):
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
-        os.rmdir(f"{self.output_dir}/{self.current_dir}")
+        os.rmdir(f"{self.output_dir}")
 
         # 启用按钮
         self.record_button.setEnabled(True)
