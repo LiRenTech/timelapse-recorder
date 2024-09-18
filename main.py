@@ -4,7 +4,14 @@ import subprocess
 from time import perf_counter
 
 from PIL import ImageGrab
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QPushButton,
+    QVBoxLayout,
+    QLabel,
+    QComboBox,
+)
 from PyQt5.QtCore import QTimer
 
 
@@ -23,6 +30,7 @@ class ScreenshotApp(QWidget):
         self.timer = QTimer(self)  # 动态开启一个Qt定时器
         self.grab_index = 0  # 截图计数器
         self.is_recording = False  # 录制状态
+        self.capture_interval = 1000  # 默认间隔1000毫秒
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -37,7 +45,18 @@ class ScreenshotApp(QWidget):
         self.record_button.clicked.connect(self.toggle_recording)
         layout.addWidget(self.record_button)
 
+        # 添加一个下拉框来选择截屏间隔
+        layout.addWidget(QLabel("截屏间隔：", self))
+        self.interval_combo = QComboBox(self)
+        self.interval_combo.addItems(["0.5s", "1s", "2s", "3s", "5s", "10s"])
+        self.interval_combo.currentIndexChanged.connect(self.update_interval)
+        layout.addWidget(self.interval_combo)
+
         self.setLayout(layout)
+
+    def update_interval(self, index):
+        intervals = [500, 1000, 2000, 3000, 5000, 10000]  # 毫秒数
+        self.capture_interval = intervals[index]
 
     async def grab_screenshot(self, file_name="screenshot.png"):
         # 截图并保存
@@ -48,7 +67,10 @@ class ScreenshotApp(QWidget):
         print(f"截图耗时：{t2 - t1:.2f}秒")
 
         # 刷新提示
-        self.tips_text.setText(f"已保存第{self.grab_index+1}张截图")
+        seconds = self.grab_index / 30
+        self.tips_text.setText(
+            f"已保存第{self.grab_index + 1}帧，视频时长：{seconds:.2f}秒"
+        )
         self.grab_index += 1
 
     def images_to_video(self, dir_name, video_name="timelapse.mp4"):
@@ -87,7 +109,7 @@ class ScreenshotApp(QWidget):
                 self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
             )
         )
-        self.timer.start(1000)  # 每隔1秒截图一次
+        self.timer.start(self.capture_interval)  # 使用自定义间隔
 
     def stop_screenshots(self):
         self.is_recording = False
@@ -96,22 +118,21 @@ class ScreenshotApp(QWidget):
         self.tips_text.setText("正在生成视频……")
         # 禁用按钮
         self.record_button.setEnabled(False)
+
         # 改成红色
         self.tips_text.setStyleSheet("QLabel { color: red; }")
         self.images_to_video(
             f"{self.output_dir}/{self.current_dir}", f"{self.current_dir}.mp4"
         )
         self.tips_text.setText("截图完成并生成视频！")
+
         # 改成绿色
         self.tips_text.setStyleSheet("QLabel { color: green; }")
-        
+
         # 更新按钮文本
         self.record_button.setText("开始录制")
 
         # 删除临时文件夹
-        # os.rmdir(f"{self.output_dir}/{self.current_dir}")  # 报错，目录不是空的
-
-        # 递归删除
         for root, dirs, files in os.walk(
             f"{self.output_dir}/{self.current_dir}", topdown=False
         ):
@@ -123,7 +144,6 @@ class ScreenshotApp(QWidget):
 
         # 启用按钮
         self.record_button.setEnabled(True)
-        pass
 
 
 if __name__ == "__main__":
