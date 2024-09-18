@@ -32,6 +32,7 @@ class ScreenshotApp(QWidget):
         self.is_recording = False  # 录制状态
         self.capture_interval = 1000  # 默认间隔1000毫秒
         self.frame_rate = 30  # 默认帧率
+        self.speed_rate = 20  # 默认速度倍率
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -46,15 +47,16 @@ class ScreenshotApp(QWidget):
         self.record_button.clicked.connect(self.toggle_recording)
         layout.addWidget(self.record_button)
 
-        # 添加下拉框选择截屏间隔
-        layout.addWidget(QLabel("截屏间隔：", self))
-        self.interval_combo = QComboBox(self)
-        self.interval_combo.addItems(["0.5s", "1s", "2s", "3s", "5s", "10s"])
-        self.interval_combo.currentIndexChanged.connect(self.update_interval)
-        layout.addWidget(self.interval_combo)
+        layout.addWidget(QLabel("最终视频倍速：", self))
+        self.speed_combo = QComboBox(self)
+        self.speed_combo.addItems(["x10", "x20", "x50", "x100", "x200", "x500", "x1000"])
+        self.speed_combo.currentIndexChanged.connect(self.update_speed)
+        # 设置默认倍速为20
+        self.speed_combo.setCurrentIndex(1)
+        layout.addWidget(self.speed_combo)
 
         # 添加下拉框选择帧率
-        layout.addWidget(QLabel("帧率：", self))
+        layout.addWidget(QLabel("最终视频帧率：", self))
         self.frame_rate_combo = QComboBox(self)
         self.frame_rate_combo.addItems(["30帧", "60帧"])
         self.frame_rate_combo.currentIndexChanged.connect(self.update_frame_rate)
@@ -62,9 +64,9 @@ class ScreenshotApp(QWidget):
 
         self.setLayout(layout)
 
-    def update_interval(self, index):
-        intervals = [500, 1000, 2000, 3000, 5000, 10000]  # 毫秒数
-        self.capture_interval = intervals[index]
+    def update_speed(self, index):
+        intervals = [10, 20, 50, 100, 200, 500, 1000]  # 毫秒数
+        self.speed_rate = intervals[index]
 
     def update_frame_rate(self, index):
         frame_rates = [30, 60]  # 帧率选项
@@ -121,7 +123,7 @@ class ScreenshotApp(QWidget):
                 self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
             )
         )
-        self.timer.start(self.capture_interval)  # 使用自定义间隔
+        self.timer.start(int(1000 / self.frame_rate * self.speed_rate))  # 使用自定义间隔
 
     def stop_screenshots(self):
         self.is_recording = False
