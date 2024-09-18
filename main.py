@@ -31,6 +31,7 @@ class ScreenshotApp(QWidget):
         self.grab_index = 0  # 截图计数器
         self.is_recording = False  # 录制状态
         self.capture_interval = 1000  # 默认间隔1000毫秒
+        self.frame_rate = 30  # 默认帧率
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -45,18 +46,29 @@ class ScreenshotApp(QWidget):
         self.record_button.clicked.connect(self.toggle_recording)
         layout.addWidget(self.record_button)
 
-        # 添加一个下拉框来选择截屏间隔
+        # 添加下拉框选择截屏间隔
         layout.addWidget(QLabel("截屏间隔：", self))
         self.interval_combo = QComboBox(self)
         self.interval_combo.addItems(["0.5s", "1s", "2s", "3s", "5s", "10s"])
         self.interval_combo.currentIndexChanged.connect(self.update_interval)
         layout.addWidget(self.interval_combo)
 
+        # 添加下拉框选择帧率
+        layout.addWidget(QLabel("帧率：", self))
+        self.frame_rate_combo = QComboBox(self)
+        self.frame_rate_combo.addItems(["30帧", "60帧"])
+        self.frame_rate_combo.currentIndexChanged.connect(self.update_frame_rate)
+        layout.addWidget(self.frame_rate_combo)
+
         self.setLayout(layout)
 
     def update_interval(self, index):
         intervals = [500, 1000, 2000, 3000, 5000, 10000]  # 毫秒数
         self.capture_interval = intervals[index]
+
+    def update_frame_rate(self, index):
+        frame_rates = [30, 60]  # 帧率选项
+        self.frame_rate = frame_rates[index]
 
     async def grab_screenshot(self, file_name="screenshot.png"):
         # 截图并保存
@@ -67,7 +79,7 @@ class ScreenshotApp(QWidget):
         print(f"截图耗时：{t2 - t1:.2f}秒")
 
         # 刷新提示
-        seconds = self.grab_index / 30
+        seconds = self.grab_index / self.frame_rate
         self.tips_text.setText(
             f"已保存第{self.grab_index + 1}帧，视频时长：{seconds:.2f}秒"
         )
@@ -78,7 +90,7 @@ class ScreenshotApp(QWidget):
         command = [
             "ffmpeg",
             "-framerate",
-            "30",
+            str(self.frame_rate),  # 使用选定的帧率
             "-i",
             f"{dir_name}/%d.png",
             "-c:v",
