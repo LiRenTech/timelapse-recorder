@@ -22,6 +22,7 @@ class ScreenshotApp(QWidget):
 
         self.timer = QTimer(self)  # 动态开启一个Qt定时器
         self.grab_index = 0  # 截图计数器
+        self.is_recording = False  # 录制状态
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -32,13 +33,9 @@ class ScreenshotApp(QWidget):
         self.tips_text = QLabel("按下按钮开始录制", self)
         layout.addWidget(self.tips_text)
 
-        self.start_button = QPushButton("开始录制", self)
-        self.start_button.clicked.connect(self.start_screenshots)
-        layout.addWidget(self.start_button)
-
-        self.stop_button = QPushButton("停止录制", self)
-        self.stop_button.clicked.connect(self.stop_screenshots)
-        layout.addWidget(self.stop_button)
+        self.record_button = QPushButton("开始录制", self)
+        self.record_button.clicked.connect(self.toggle_recording)
+        layout.addWidget(self.record_button)
 
         self.setLayout(layout)
 
@@ -71,12 +68,20 @@ class ScreenshotApp(QWidget):
         subprocess.run(command)
         print(f"视频已保存为 {video_name}")
 
+    def toggle_recording(self):
+        if self.is_recording:
+            self.stop_screenshots()
+        else:
+            self.start_screenshots()
+
     def start_screenshots(self):
+        self.is_recording = True
         self.grab_index = 0
         self.current_dir = f"screenshots-{int(perf_counter())}"
         dir_name = f"{self.output_dir}/{self.current_dir}"
         os.mkdir(dir_name)
 
+        self.record_button.setText("停止录制")
         self.timer.timeout.connect(
             lambda: asyncio.run(
                 self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
@@ -85,6 +90,7 @@ class ScreenshotApp(QWidget):
         self.timer.start(1000)  # 每隔1秒截图一次
 
     def stop_screenshots(self):
+        self.is_recording = False
         self.grab_index = 0
         self.timer.stop()
         self.tips_text.setText("正在生成视频……")
@@ -96,6 +102,9 @@ class ScreenshotApp(QWidget):
         self.tips_text.setText("截图完成并生成视频！")
         # 改成绿色
         self.tips_text.setStyleSheet("QLabel { color: green; }")
+        
+        # 更新按钮文本
+        self.record_button.setText("开始录制")
 
         # 删除临时文件夹
         # os.rmdir(f"{self.output_dir}/{self.current_dir}")  # 报错，目录不是空的
