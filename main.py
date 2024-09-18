@@ -2,6 +2,7 @@ import os
 import asyncio
 import subprocess
 from time import perf_counter
+
 from PIL import ImageGrab
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
 
@@ -19,13 +20,13 @@ class ScreenshotApp(QWidget):
         self.current_dir = ""
 
     def init_ui(self):
-        self.setWindowTitle("延时摄影录屏工具")
+        self.setWindowTitle("延时录屏")
         # 设置最小宽度大小
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(500)
         layout = QVBoxLayout()
 
-        self.label = QLabel("按下按钮开始录制", self)
-        layout.addWidget(self.label)
+        self.tips_text = QLabel("按下按钮开始录制", self)
+        layout.addWidget(self.tips_text)
 
         self.start_button = QPushButton("开始录制", self)
         self.start_button.clicked.connect(self.start_screenshots)
@@ -63,7 +64,7 @@ class ScreenshotApp(QWidget):
         print(f"视频已保存为 {video_name}")
 
     def start_screenshots(self):
-        self.label.setText("正在截图...")
+        self.tips_text.setText("正在截图...")
 
         self.current_dir = f"screenshots-{int(perf_counter())}"
         dir_name = f"{self.output_dir}/{self.current_dir}"
@@ -79,8 +80,25 @@ class ScreenshotApp(QWidget):
         loop.run_until_complete(take_screenshots())
 
     def stop_screenshots(self):
-        self.images_to_video(f"{self.output_dir}/{self.current_dir}")
-        self.label.setText("截图完成并生成视频！")
+        self.tips_text.setText("正在生成视频……")
+        # 改成红色
+        self.tips_text.setStyleSheet("QLabel { color: red; }")
+        self.images_to_video(f"{self.output_dir}/{self.current_dir}", f"{self.current_dir}.mp4")
+        self.tips_text.setText("截图完成并生成视频！")
+        # 改成绿色
+        self.tips_text.setStyleSheet("QLabel { color: green; }")
+        
+        # 删除临时文件夹
+        # os.rmdir(f"{self.output_dir}/{self.current_dir}")  # 报错，目录不是空的
+
+        # 递归删除
+        for root, dirs, files in os.walk(f"{self.output_dir}/{self.current_dir}", topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        os.rmdir(f"{self.output_dir}/{self.current_dir}")
+
         pass
 
 
