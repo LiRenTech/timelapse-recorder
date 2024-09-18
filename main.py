@@ -94,6 +94,8 @@ class ScreenshotApp(QWidget):
         self.grab_index = 0
         self.timer.stop()
         self.tips_text.setText("正在生成视频……")
+        # 禁用按钮
+        self.record_button.setEnabled(False)
         # 改成红色
         self.tips_text.setStyleSheet("QLabel { color: red; }")
         self.images_to_video(
@@ -119,6 +121,8 @@ class ScreenshotApp(QWidget):
                 os.rmdir(os.path.join(root, name))
         os.rmdir(f"{self.output_dir}/{self.current_dir}")
 
+        # 启用按钮
+        self.record_button.setEnabled(True)
         pass
 
 
