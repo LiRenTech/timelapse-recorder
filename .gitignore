@@ -5,3 +5,9 @@ assets/assets.py
 
 __pycache__/
 *.pyc
+
+
+# pyinstaller
+build/
+dist/
+*.spec
