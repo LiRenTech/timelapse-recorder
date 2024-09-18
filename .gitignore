@@ -1,2 +1,7 @@
 .venv/
 output/
+
+assets/assets.py
+
+__pycache__/
+*.pyc

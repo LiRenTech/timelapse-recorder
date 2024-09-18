@@ -12,7 +12,10 @@ from PyQt5.QtWidgets import (
     QLabel,
     QComboBox,
 )
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QTimer
+
+from assets import assets  # noqa: F401
 
 
 class ScreenshotApp(QWidget):
@@ -36,6 +39,7 @@ class ScreenshotApp(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
+        self.setWindowIcon(QIcon(":/favicon.ico"))
         # 设置最小宽度大小
         self.setMinimumWidth(500)
         layout = QVBoxLayout()
