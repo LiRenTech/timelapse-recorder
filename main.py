@@ -25,9 +25,6 @@ class ScreenshotApp(QWidget):
         self.init_ui()
 
         self.output_dir = "output"
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
-
         self.current_dir = ""
 
         self.timer = QTimer(self)  # 动态开启一个Qt定时器
@@ -36,6 +33,8 @@ class ScreenshotApp(QWidget):
         self.capture_interval = 1000  # 默认间隔1000毫秒
         self.frame_rate = 30  # 默认帧率
         self.speed_rate = 20  # 默认速度倍率
+        self.cache_size = 0  # 缓存大小 MB
+        self.current_settings = ""  # 当前设置 比如倍率和帧率的序列化信息
 
     def init_ui(self):
         self.setWindowTitle("延时录屏")
@@ -86,10 +85,18 @@ class ScreenshotApp(QWidget):
         t2 = perf_counter()
         print(f"截图耗时：{t2 - t1:.2f}秒")
 
+        # 获取截图文件夹大小
+        size = os.path.getsize(file_name) / 1024 / 1024
+        print(f"截图大小：{size:.2f}MB")
+        self.cache_size += size
+
         # 刷新提示
         seconds = self.grab_index / self.frame_rate
         self.tips_text.setText(
-            f"已保存第{self.grab_index + 1}帧，视频时长：{seconds:.2f}秒"
+            f"当前设定：{self.current_settings}\n"
+            f"已有帧数：{self.grab_index + 1}帧\n"
+            f"视频时长：{seconds:.2f}秒\n"
+            f"缓存大小：{self.cache_size:.2f}MB"
         )
         self.grab_index += 1
 
@@ -126,6 +133,8 @@ class ScreenshotApp(QWidget):
         self.current_dir = f"screenshots-{int(perf_counter())}"
         dir_name = f"{self.output_dir}/{self.current_dir}"
         os.mkdir(dir_name)
+        # 设置当前设置
+        self.current_settings = f"倍速{self.speed_rate}，帧率{self.frame_rate}帧"
 
         self.record_button.setText("停止录制")
         self.timer.timeout.connect(

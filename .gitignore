@@ -1,5 +1,7 @@
 .venv/
+# output
 output/
+*.mp4
 
 assets/assets.py
 
