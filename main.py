@@ -19,6 +19,7 @@ from assets import assets  # noqa: F401
 
 
 class ScreenshotApp(QWidget):
+    # bug：解锁的那一刹那报错了
     def __init__(self):
         super().__init__()
 
@@ -78,27 +79,31 @@ class ScreenshotApp(QWidget):
         self.frame_rate = frame_rates[index]
 
     async def grab_screenshot(self, file_name="screenshot.png"):
-        # 截图并保存
-        t1 = perf_counter()
-        im = ImageGrab.grab()
-        im.save(file_name)
-        t2 = perf_counter()
-        print(f"截图耗时：{t2 - t1:.2f}秒")
+        try:
+            # 截图并保存
+            t1 = perf_counter()
+            im = ImageGrab.grab()
+            im.save(file_name)
+            t2 = perf_counter()
+            print(f"截图耗时：{t2 - t1:.2f}秒")
 
-        # 获取截图文件夹大小
-        size = os.path.getsize(file_name) / 1024 / 1024
-        print(f"截图大小：{size:.2f}MB")
-        self.cache_size += size
+            # 获取截图文件夹大小
+            size = os.path.getsize(file_name) / 1024 / 1024
+            print(f"截图大小：{size:.2f}MB")
+            self.cache_size += size
 
-        # 刷新提示
-        seconds = self.grab_index / self.frame_rate
-        self.tips_text.setText(
-            f"当前设定：{self.current_settings}\n"
-            f"已有帧数：{self.grab_index + 1}帧\n"
-            f"视频时长：{seconds:.2f}秒\n"
-            f"缓存大小：{self.cache_size:.2f}MB"
-        )
-        self.grab_index += 1
+            # 刷新提示
+            seconds = self.grab_index / self.frame_rate
+            self.tips_text.setText(
+                f"当前设定：{self.current_settings}\n"
+                f"已有帧数：{self.grab_index + 1}帧\n"
+                f"视频时长：{seconds:.2f}秒\n"
+                f"缓存大小：{self.cache_size:.2f}MB"
+            )
+            self.grab_index += 1
+        except OSError:
+            # 可能由于正在解锁，导致截图失败
+            print(f"{self.grab_index} 帧 截图失败！")
 
     def images_to_video(self, dir_name, video_name="timelapse.mp4"):
         # 使用ffmpeg将图片合成视频
