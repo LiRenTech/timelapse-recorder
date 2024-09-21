@@ -78,7 +78,7 @@ class ScreenshotApp(QWidget):
         frame_rates = [30, 60]  # 帧率选项
         self.frame_rate = frame_rates[index]
 
-    async def grab_screenshot(self, file_name="screenshot.png"):
+    async def grab_screenshot(self, file_name="screenshot.jpeg"):
         try:
             # 截图并保存
             t1 = perf_counter()
@@ -112,7 +112,7 @@ class ScreenshotApp(QWidget):
             "-framerate",
             str(self.frame_rate),  # 使用选定的帧率
             "-i",
-            f"{dir_name}/%d.png",
+            f"{dir_name}/%d.jpeg",
             "-c:v",
             "libx264",
             "-pix_fmt",
@@ -144,7 +144,7 @@ class ScreenshotApp(QWidget):
         self.record_button.setText("停止录制")
         self.timer.timeout.connect(
             lambda: asyncio.run(
-                self.grab_screenshot(f"{dir_name}/{self.grab_index}.png")
+                self.grab_screenshot(f"{dir_name}/{self.grab_index}.jpeg")
             )
         )
         self.timer.start(
